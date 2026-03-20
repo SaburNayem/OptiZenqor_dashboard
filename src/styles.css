@@ -156,6 +156,102 @@ p {
   padding: 28px;
 }
 
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  background:
+    radial-gradient(circle at top left, rgba(15, 138, 112, 0.2), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(223, 138, 59, 0.22), transparent 30%),
+    linear-gradient(160deg, #f9f6ef 0%, #eadfcb 100%);
+}
+
+.auth-showcase {
+  padding: 56px;
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  background:
+    linear-gradient(135deg, rgba(18, 82, 73, 0.96), rgba(15, 138, 112, 0.88)),
+    var(--surface-dark);
+  color: #fff8ef;
+}
+
+.auth-showcase h1 {
+  max-width: 10ch;
+  font-size: clamp(2.5rem, 4vw, 4.5rem);
+  line-height: 0.95;
+}
+
+.auth-showcase p:last-of-type {
+  max-width: 56ch;
+  color: rgba(255, 248, 239, 0.8);
+  line-height: 1.7;
+}
+
+.auth-panel {
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.auth-panel-head {
+  margin-bottom: 24px;
+}
+
+.auth-panel-head p:last-child {
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.auth-form,
+.auth-tip-card {
+  border: 1px solid rgba(162, 136, 98, 0.2);
+  background: rgba(255, 252, 246, 0.88);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.auth-form {
+  width: min(100%, 440px);
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  display: grid;
+  gap: 16px;
+}
+
+.auth-tip-card {
+  width: fit-content;
+  padding: 18px 20px;
+  border-radius: 22px;
+  display: grid;
+  gap: 6px;
+}
+
+.auth-tip-card span {
+  color: rgba(255, 248, 239, 0.8);
+}
+
+.auth-error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.auth-button,
+.logout-button {
+  min-height: 52px;
+  border: none;
+  border-radius: 16px;
+  font-weight: 800;
+}
+
+.logout-button {
+  padding: 0 18px;
+  background: #fff8ef;
+  color: var(--brand-deep);
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
@@ -569,6 +665,7 @@ select:focus {
 }
 
 @media (max-width: 1180px) {
+  .auth-shell,
   .dashboard-shell {
     grid-template-columns: 1fr;
   }
@@ -609,6 +706,8 @@ select:focus {
 }
 
 @media (max-width: 720px) {
+  .auth-showcase,
+  .auth-panel,
   .main-panel {
     padding: 18px;
   }

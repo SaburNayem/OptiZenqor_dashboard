@@ -1,9 +1,16 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { signOut } from "../../features/auth/auth";
 import { navigationItems, pageMeta } from "../../shared/config/navigation";
 
 function DashboardLayout({ dashboard }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentMeta = pageMeta[location.pathname] ?? pageMeta["/"];
+
+  function handleLogout() {
+    signOut();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <div className="dashboard-shell">
@@ -63,6 +70,9 @@ function DashboardLayout({ dashboard }) {
               <strong>{dashboard.systemSnapshot.apiCount}</strong>
               <span>API endpoints</span>
             </article>
+            <button type="button" className="logout-button" onClick={handleLogout}>
+              Logout
+            </button>
           </div>
         </header>
 
