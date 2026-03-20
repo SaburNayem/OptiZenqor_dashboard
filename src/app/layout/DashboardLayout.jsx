@@ -21,7 +21,7 @@ function DashboardLayout() {
           <div className="brand-icon">OZ</div>
           <div>
             <strong>OptiZenqor</strong>
-            <p>Commerce and product operations</p>
+            <p>Master admin control center</p>
           </div>
         </div>
 
@@ -31,9 +31,7 @@ function DashboardLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) =>
-                `nav-button ${isActive ? "active" : ""}`.trim()
-              }
+              className={({ isActive }) => `nav-button ${isActive ? "active" : ""}`.trim()}
             >
               <span>{item.label}</span>
               <small>{item.helper}</small>
@@ -42,11 +40,11 @@ function DashboardLayout() {
         </nav>
 
         <div className="sidebar-card">
-          <p className="eyebrow">Connected domains</p>
-          <h3>Aligned with your app and web flow</h3>
+          <p className="eyebrow">Command center</p>
+          <h3>{dashboard.pendingActions} pending actions across the ecosystem</h3>
           <p>
-            Catalog, categories, offers, account actions, auth states, and API
-            endpoints are now reflected in the dashboard structure.
+            Catalog, orders, customers, homepage content, support, auth flows,
+            and system visibility are organized into dedicated admin surfaces.
           </p>
         </div>
       </aside>
@@ -60,18 +58,14 @@ function DashboardLayout() {
           </div>
 
           <div className="topbar-actions">
-            <article className="mini-stat">
-              <strong>{dashboard.pendingActions}</strong>
+            <div className="mini-stat">
               <span>Pending actions</span>
-            </article>
-            <article className="mini-stat">
-              <strong>{dashboard.systemSnapshot.liveRoutes}</strong>
+              <strong>{dashboard.pendingActions}</strong>
+            </div>
+            <div className="mini-stat">
               <span>Live routes</span>
-            </article>
-            <article className="mini-stat">
-              <strong>{dashboard.systemSnapshot.apiCount}</strong>
-              <span>API endpoints</span>
-            </article>
+              <strong>{dashboard.systemSnapshot.liveRoutes}</strong>
+            </div>
             <button type="button" className="logout-button" onClick={handleLogout}>
               Logout
             </button>
@@ -84,9 +78,7 @@ function DashboardLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) =>
-                `mobile-nav-link ${isActive ? "active" : ""}`.trim()
-              }
+              className={({ isActive }) => `mobile-nav-link ${isActive ? "active" : ""}`.trim()}
             >
               {item.label}
             </NavLink>

@@ -1,16 +1,19 @@
 import { createBrowserRouter } from "react-router-dom";
-import DashboardLayout from "./layout/DashboardLayout";
 import ProtectedRoute from "../features/auth/ProtectedRoute";
-import { DashboardProvider } from "../store/DashboardContext";
-import CategoriesPage from "../pages/CategoriesPage";
-import ChatPage from "../pages/ChatPage";
-import ContentPage from "../pages/ContentPage";
-import FeaturesPage from "../pages/FeaturesPage";
-import LoginPage from "../pages/LoginPage";
-import OverviewPage from "../pages/OverviewPage";
-import ProductsPage from "../pages/ProductsPage";
-import SystemPage from "../pages/SystemPage";
-import UsersPage from "../pages/UsersPage";
+import LoginPage from "../features/auth/pages/LoginPage";
+import CategoriesPage from "../features/categories/pages/CategoriesPage";
+import ChatPage from "../features/chat/pages/ChatPage";
+import ContentPage from "../features/content/pages/ContentPage";
+import CustomersPage from "../features/customers/pages/CustomersPage";
+import FeaturesPage from "../features/features_rollout/pages/FeaturesPage";
+import HomepagePage from "../features/homepage/pages/HomepagePage";
+import OrdersPage from "../features/orders/pages/OrdersPage";
+import OverviewPage from "../features/overview/pages/OverviewPage";
+import SettingsPage from "../features/settings/pages/SettingsPage";
+import SystemPage from "../features/system/pages/SystemPage";
+import CatalogPage from "../features/catalog/pages/CatalogPage";
+import DashboardLayout from "./layout/DashboardLayout";
+import NotFoundState from "../shared/feedback/NotFoundState";
 
 export const router = createBrowserRouter([
   {
@@ -22,20 +25,20 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: (
-          <DashboardProvider>
-            <DashboardLayout />
-          </DashboardProvider>
-        ),
+        element: <DashboardLayout />,
         children: [
           { index: true, element: <OverviewPage /> },
-          { path: "catalog", element: <ProductsPage /> },
+          { path: "catalog", element: <CatalogPage /> },
           { path: "categories", element: <CategoriesPage /> },
-          { path: "customers", element: <UsersPage /> },
+          { path: "customers", element: <CustomersPage /> },
+          { path: "orders", element: <OrdersPage /> },
           { path: "content", element: <ContentPage /> },
+          { path: "homepage", element: <HomepagePage /> },
           { path: "features", element: <FeaturesPage /> },
           { path: "chat", element: <ChatPage /> },
           { path: "system", element: <SystemPage /> },
+          { path: "settings", element: <SettingsPage /> },
+          { path: "*", element: <NotFoundState /> },
         ],
       },
     ],

@@ -1,116 +1,239 @@
-import { accountActions, users as seedUsers } from "./data/customers";
-import { contentHighlights, drawerItems, posts as seedPosts } from "./data/content";
-import { categories, homeHighlights, offerTabs as seedOfferTabs, products as seedProducts } from "./data/catalog";
 import {
-  activityFeed,
-  apiConfig,
-  authFlows,
-  features as seedFeatures,
-  toneMap,
-} from "./data/system";
-
-export const initialChatThreads = [
-  {
-    id: "chat-1",
-    customerName: "Nafisa Rahman",
-    channel: "Website chat",
-    orderRef: "ORD-1204",
-    status: "Open",
-    messages: [
-      { id: "m1", sender: "customer", text: "My order is delayed. Can you check?", time: "09:20" },
-      { id: "m2", sender: "admin", text: "Checking this for you now.", time: "09:24" },
-    ],
-  },
-  {
-    id: "chat-2",
-    customerName: "Arif Hasan",
-    channel: "Support inbox",
-    orderRef: "ORD-1281",
-    status: "Pending",
-    messages: [
-      { id: "m3", sender: "customer", text: "Can I change my delivery address?", time: "11:05" },
-    ],
-  },
-];
+  createCatalogSeed,
+  addProduct as addProductRecord,
+  addOfferTab as addOfferTabRecord,
+  deleteProduct as deleteProductRecord,
+  getCatalogStats,
+  updateProduct as updateProductRecord,
+} from "../features/catalog/services/catalogService";
+import { getCategoryRows } from "../features/categories/services/categoryService";
+import {
+  createChatSeed,
+  sendChatMessage as sendChatReply,
+  updateChatStatus as updateChatThreadStatus,
+} from "../features/chat/services/chatService";
+import { createContentSeed, updatePost as updatePostRecord } from "../features/content/services/contentService";
+import {
+  createCustomerSeed,
+  updateCustomerStatus as updateCustomerRecordStatus,
+} from "../features/customers/services/customerService";
+import {
+  createFeatureSeed,
+  toggleFeature as toggleFeatureFlag,
+  updateFeatureEnvironment as updateFeatureFlagEnvironment,
+  updateFeatureRollout as updateFeatureFlagRollout,
+} from "../features/features_rollout/services/featureFlagService";
+import { createHomepageSeed } from "../features/homepage/services/homepageService";
+import { createOrderSeed, updateOrderStatus as updateOrderRecordStatus } from "../features/orders/services/orderService";
+import { createSettingsSeed } from "../features/settings/services/settingsService";
+import { createSystemSeed, refreshSystemStatus } from "../features/system/services/systemService";
 
 export function createSeedState() {
+  const catalog = createCatalogSeed();
+  const customers = createCustomerSeed();
+  const content = createContentSeed();
+  const chat = createChatSeed();
+
   return {
-    products: seedProducts.map((product) => ({
-      ...product,
-      categoryIds: product.categoryIds ?? [product.categoryId],
-      categoryNames: product.categoryNames ?? [product.categoryName],
-      offerTags: product.offerTags ?? [],
-    })),
-    users: seedUsers,
-    posts: seedPosts.map((post) => ({
-      ...post,
-      status: post.status === "Published" ? "Approved" : post.status,
-    })),
-    features: seedFeatures,
-    chatThreads: initialChatThreads,
-    offerTabs: seedOfferTabs,
+    catalog,
+    customers,
+    orders: {
+      orders: createOrderSeed(),
+    },
+    content,
+    homepage: createHomepageSeed(),
+    featureFlags: {
+      features: createFeatureSeed(),
+    },
+    chat,
+    system: createSystemSeed(),
+    settings: createSettingsSeed(),
+  };
+}
+
+export function createDashboardActions(setState) {
+  return {
+    addProduct(form) {
+      setState((current) => ({
+        ...current,
+        catalog: {
+          ...current.catalog,
+          products: addProductRecord(current.catalog.products, form),
+        },
+      }));
+    },
+    updateProduct(productId, updates) {
+      setState((current) => ({
+        ...current,
+        catalog: {
+          ...current.catalog,
+          products: updateProductRecord(current.catalog.products, productId, updates),
+        },
+      }));
+    },
+    deleteProduct(productId) {
+      setState((current) => ({
+        ...current,
+        catalog: {
+          ...current.catalog,
+          products: deleteProductRecord(current.catalog.products, productId),
+        },
+      }));
+    },
+    addOfferTab(label) {
+      setState((current) => ({
+        ...current,
+        catalog: {
+          ...current.catalog,
+          offerTabs: addOfferTabRecord(current.catalog.offerTabs, label),
+        },
+      }));
+    },
+    updateCustomerStatus(userId, status) {
+      setState((current) => ({
+        ...current,
+        customers: {
+          ...current.customers,
+          users: updateCustomerRecordStatus(current.customers.users, userId, status),
+        },
+      }));
+    },
+    updateOrderStatus(orderId, status) {
+      setState((current) => ({
+        ...current,
+        orders: {
+          ...current.orders,
+          orders: updateOrderRecordStatus(current.orders.orders, orderId, status),
+        },
+      }));
+    },
+    updatePost(postId, updates) {
+      setState((current) => ({
+        ...current,
+        content: {
+          ...current.content,
+          posts: updatePostRecord(current.content.posts, postId, updates),
+        },
+      }));
+    },
+    updateHomepage(updates) {
+      setState((current) => ({
+        ...current,
+        homepage: {
+          ...current.homepage,
+          ...updates,
+        },
+      }));
+    },
+    toggleFeature(featureId) {
+      setState((current) => ({
+        ...current,
+        featureFlags: {
+          ...current.featureFlags,
+          features: toggleFeatureFlag(current.featureFlags.features, featureId),
+        },
+      }));
+    },
+    updateFeatureRollout(featureId, rollout) {
+      setState((current) => ({
+        ...current,
+        featureFlags: {
+          ...current.featureFlags,
+          features: updateFeatureFlagRollout(current.featureFlags.features, featureId, rollout),
+        },
+      }));
+    },
+    updateFeatureEnvironment(featureId, environment) {
+      setState((current) => ({
+        ...current,
+        featureFlags: {
+          ...current.featureFlags,
+          features: updateFeatureFlagEnvironment(current.featureFlags.features, featureId, environment),
+        },
+      }));
+    },
+    sendChatMessage(threadId, text) {
+      setState((current) => ({
+        ...current,
+        chat: {
+          ...current.chat,
+          chatThreads: sendChatReply(current.chat.chatThreads, threadId, text),
+        },
+      }));
+    },
+    updateChatStatus(threadId, status) {
+      setState((current) => ({
+        ...current,
+        chat: {
+          ...current.chat,
+          chatThreads: updateChatThreadStatus(current.chat.chatThreads, threadId, status),
+        },
+      }));
+    },
+    refreshSystem() {
+      setState((current) => ({
+        ...current,
+        system: refreshSystemStatus(current.system),
+      }));
+    },
+    updateSettings(updates) {
+      setState((current) => ({
+        ...current,
+        settings: {
+          ...current.settings,
+          ...updates,
+        },
+      }));
+    },
   };
 }
 
 export function buildDashboardView(state) {
-  const categoryCounts = categories.map((category) => ({
-    ...category,
-    productCount: state.products.filter((product) =>
-      (product.categoryIds ?? [product.categoryId]).includes(category.id),
-    ).length,
-  }));
+  const categoryRows = getCategoryRows(state.catalog.categories, state.catalog.products);
+  const catalogStats = getCatalogStats(state.catalog.products, state.catalog.offerTabs);
+  const activeUsers = state.customers.users.filter((user) => user.status === "Active").length;
+  const unresolvedChats = state.chat.chatThreads.filter((thread) => thread.status !== "Closed").length;
 
   const stats = [
     {
       label: "Categories",
-      value: categories.length,
-      change: `${categoryCounts.filter((item) => item.productCount > 0).length} populated groups`,
+      value: state.catalog.categories.length,
+      change: `${categoryRows.filter((row) => row.productCount > 0).length} populated groups`,
     },
     {
       label: "Products",
-      value: state.products.length,
-      change: `${state.products.filter((item) => item.status === "Published").length} live in catalog`,
+      value: state.catalog.products.length,
+      change: `${state.catalog.products.filter((product) => product.visible).length} visible to customers`,
     },
     {
       label: "Customers",
-      value: state.users.length,
-      change: `${state.users.filter((item) => item.status === "Active").length} active accounts`,
+      value: state.customers.users.length,
+      change: `${activeUsers} active accounts`,
     },
     {
-      label: "Chats",
-      value: state.chatThreads.length,
-      change: `${state.chatThreads.filter((item) => item.status !== "Closed").length} unresolved threads`,
+      label: "Orders",
+      value: state.orders.orders.length,
+      change: `${state.orders.orders.filter((order) => order.status === "Pending").length} awaiting action`,
     },
   ];
 
   const pendingActions =
-    state.products.filter((product) => product.status !== "Published").length +
-    state.posts.filter((post) => post.status !== "Approved").length +
-    state.users.filter((user) => user.status !== "Active").length +
-    state.features.filter((feature) => !feature.enabled).length +
-    state.chatThreads.filter((thread) => thread.status !== "Closed").length;
+    state.catalog.products.filter((product) => product.status !== "Published").length +
+    state.content.posts.filter((post) => post.status !== "Published" && post.status !== "Approved").length +
+    state.customers.users.filter((user) => user.status !== "Active").length +
+    state.featureFlags.features.filter((feature) => !feature.enabled).length +
+    unresolvedChats;
 
   return {
+    state,
     stats,
     pendingActions,
+    catalogStats,
+    categoryRows,
+    unresolvedChats,
     systemSnapshot: {
-      liveRoutes: 8,
-      apiCount: apiConfig.endpoints.length,
+      liveRoutes: 11,
+      apiCount: state.system.apiConfig.endpoints.length,
     },
-    categories: categoryCounts,
-    products: state.products,
-    users: state.users,
-    posts: state.posts,
-    features: state.features,
-    chatThreads: state.chatThreads,
-    activityFeed,
-    offerTabs: state.offerTabs,
-    homeHighlights,
-    accountActions,
-    drawerItems,
-    contentHighlights,
-    apiConfig,
-    authFlows,
-    toneMap,
   };
 }
