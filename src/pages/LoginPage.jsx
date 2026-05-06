@@ -10,20 +10,23 @@ function LoginPage() {
     password: adminCredentials.password,
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const redirectTo = location.state?.from || "/";
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setLoading(true);
+    setError("");
 
-    const success = signIn(form.email, form.password);
-
-    if (!success) {
-      setError("Use the admin demo credentials to enter the dashboard.");
-      return;
+    try {
+      await signIn(form.email, form.password);
+      navigate(redirectTo, { replace: true });
+    } catch (nextError) {
+      setError(nextError.message || "Unable to sign in with these credentials.");
+    } finally {
+      setLoading(false);
     }
-
-    navigate(redirectTo, { replace: true });
   }
 
   return (
@@ -37,7 +40,7 @@ function LoginPage() {
         </p>
 
         <div className="auth-tip-card">
-          <strong>Demo admin credentials</strong>
+          <strong>Seed admin credentials</strong>
           <span>Email: {adminCredentials.email}</span>
           <span>Password: {adminCredentials.password}</span>
         </div>
@@ -77,8 +80,8 @@ function LoginPage() {
 
           {error ? <p className="auth-error">{error}</p> : null}
 
-          <button type="submit" className="primary-button auth-button">
-            Login to dashboard
+          <button type="submit" className="primary-button auth-button" disabled={loading}>
+            {loading ? "Signing in..." : "Login to dashboard"}
           </button>
         </form>
       </section>

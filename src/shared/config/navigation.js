@@ -1,5 +1,6 @@
 export const navigationItems = [
   { to: "/", label: "Overview", helper: "Business snapshot", end: true },
+  { to: "/app-control", label: "App Control", helper: "Show and hide sections" },
   { to: "/catalog", label: "Catalog", helper: "Products and offers" },
   { to: "/categories", label: "Categories", helper: "Store taxonomy" },
   { to: "/customers", label: "Customers", helper: "Accounts and support" },
@@ -37,6 +38,19 @@ export const pageMeta = {
       { label: "Visibility", value: "Hide or show products across app and web" },
       { label: "Merchandising", value: "Featured and popular controls included" },
       { label: "Inventory", value: "Low-stock monitoring built into the catalog flow" },
+    ],
+  },
+  "/app-control": {
+    eyebrow: "Global control",
+    title: "App Control",
+    description: "Control every major customer-facing section from one dashboard screen.",
+    heroTitle: "Turn app sections, slider blocks, categories, offers, and content on or off from one place.",
+    heroCopy:
+      "This page is built to act like a real app-control center so admins can decide what the mobile app and storefront are allowed to show without touching code.",
+    highlights: [
+      { label: "Slider", value: "Homepage sections can be hidden or shown" },
+      { label: "Offers", value: "Campaign groups can be controlled separately" },
+      { label: "Categories", value: "Store taxonomy visibility can be switched live" },
     ],
   },
   "/categories": {

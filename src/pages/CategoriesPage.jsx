@@ -1,10 +1,58 @@
+import { useEffect, useState } from "react";
 import DashboardSection from "../shared/ui/DashboardSection";
 import DataTable from "../shared/ui/DataTable";
 import InsightCard from "../shared/ui/InsightCard";
-import { useDashboard } from "../store/DashboardContext";
+import { adminRequest } from "../shared/api/adminApi";
 
 function CategoriesPage() {
-  const dashboard = useDashboard();
+  const [state, setState] = useState({
+    loading: true,
+    error: "",
+    categories: [],
+    products: [],
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      try {
+        const [categories, products] = await Promise.all([
+          adminRequest("/categories"),
+          adminRequest("/admin/products"),
+        ]);
+
+        if (!active) return;
+        setState({ loading: false, error: "", categories, products });
+      } catch (error) {
+        if (!active) return;
+        setState((current) => ({ ...current, loading: false, error: error.message || "Unable to load categories." }));
+      }
+    }
+
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (state.loading) {
+    return <div className="page-stack"><section className="panel-card"><p>Loading categories...</p></section></div>;
+  }
+
+  if (state.error) {
+    return <div className="page-stack"><section className="panel-card"><p className="auth-error">{state.error}</p></section></div>;
+  }
+
+  const categoriesWithCounts = state.categories.map((category) => ({
+    ...category,
+    productCount: state.products.filter((product) => product.primaryCategoryId === category.id).length,
+  }));
+
+  const largestCategory = categoriesWithCounts.reduce(
+    (largest, current) => (current.productCount > largest.productCount ? current : largest),
+    categoriesWithCounts[0] || { name: "None", productCount: 0 },
+  );
 
   return (
     <div className="page-stack">
@@ -12,19 +60,19 @@ function CategoriesPage() {
         <InsightCard
           eyebrow="Categories"
           title="Active categories"
-          value={dashboard.categories.length}
-          description="All storefront categories are represented in the dashboard taxonomy view."
+          value={categoriesWithCounts.length}
+          description="All storefront categories are loaded directly from the backend taxonomy."
         />
         <InsightCard
           eyebrow="Categories"
           title="Largest segment"
-          value="Beauty & Personal Care"
-          description="This category currently holds the deepest product assortment in the imported seed data."
+          value={largestCategory.name}
+          description={`${largestCategory.productCount} products currently point at this primary category.`}
         />
         <InsightCard
           eyebrow="Categories"
           title="Navigation health"
-          value={`${dashboard.categories.filter((item) => item.productCount > 0).length}/${dashboard.categories.length}`}
+          value={`${categoriesWithCounts.filter((item) => item.productCount > 0).length}/${categoriesWithCounts.length}`}
           description="Categories with live products connected to the browsing experience."
         />
       </section>
@@ -35,7 +83,7 @@ function CategoriesPage() {
       >
         <DataTable
           columns={["Category", "Icon", "Banner title", "Products", "State"]}
-          rows={dashboard.categories.map((category) => (
+          rows={categoriesWithCounts.map((category) => (
             <tr key={category.id}>
               <td>
                 <div className="identity-cell">
@@ -43,8 +91,8 @@ function CategoriesPage() {
                   <span>{category.id}</span>
                 </div>
               </td>
-              <td>{category.icon}</td>
-              <td>{category.bannerTitle}</td>
+              <td>{category.icon || category.name.slice(0, 1).toUpperCase()}</td>
+              <td>{category.bannerTitle || category.name}</td>
               <td>{category.productCount}</td>
               <td>{category.productCount > 0 ? "Ready" : "Empty"}</td>
             </tr>

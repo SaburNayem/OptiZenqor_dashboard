@@ -12,6 +12,7 @@ import OverviewPage from "../features/overview/pages/OverviewPage";
 import SettingsPage from "../features/settings/pages/SettingsPage";
 import SystemPage from "../features/system/pages/SystemPage";
 import CatalogPage from "../features/catalog/pages/CatalogPage";
+import AppControlPage from "../pages/AppControlPage";
 import DashboardLayout from "./layout/DashboardLayout";
 import NotFoundState from "../shared/feedback/NotFoundState";
 
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
         element: <DashboardLayout />,
         children: [
           { index: true, element: <OverviewPage /> },
+          { path: "app-control", element: <AppControlPage /> },
           { path: "catalog", element: <CatalogPage /> },
           { path: "categories", element: <CategoriesPage /> },
           { path: "customers", element: <CustomersPage /> },

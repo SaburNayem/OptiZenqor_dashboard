@@ -14,20 +14,21 @@ export function useAuthController() {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     const nextErrors = validateLogin(form);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
-    const success = signIn(form.email, form.password);
+    setSubmitError("");
 
-    if (!success) {
+    try {
+      await signIn(form.email, form.password);
+      navigate(location.state?.from || appRoutes.overview, { replace: true });
+    } catch (error) {
       setSubmitError("Use the demo admin credentials to enter the dashboard.");
-      return;
+      console.error("Unable to sign in:", error);
     }
-
-    navigate(location.state?.from || appRoutes.overview, { replace: true });
   }
 
   return {

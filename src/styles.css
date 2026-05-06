@@ -711,6 +711,45 @@ label {
   font-size: 0.95rem;
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 52px;
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.password-toggle:hover {
+  background: rgba(15, 138, 112, 0.08);
+  color: var(--brand-deep);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid rgba(15, 138, 112, 0.35);
+  outline-offset: 2px;
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
 input,
 select,
 textarea {
