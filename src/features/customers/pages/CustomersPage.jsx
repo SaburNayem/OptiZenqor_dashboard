@@ -1,97 +1,69 @@
+import { useEffect, useMemo, useState } from "react";
 import DashboardSection from "../../../shared/ui/DashboardSection";
 import DataTable from "../../../shared/ui/DataTable";
-import SideDetailPanel from "../../../shared/feedback/SideDetailPanel";
 import InsightCard from "../../../shared/ui/InsightCard";
-import StatusBadge from "../../../shared/ui/StatusBadge";
-import { useDashboard } from "../../../store/DashboardContext";
-import CustomerFilters from "../components/CustomerFilters";
-import { useCustomersController } from "../controller/customersController";
+import { adminRequest } from "../../../shared/api/adminApi";
 
 function CustomersPage() {
-  const controller = useCustomersController();
-  const dashboard = useDashboard();
+  const [state, setState] = useState({ loading: true, error: "", customers: [] });
+
+  async function load() {
+    try {
+      const customers = await adminRequest("/admin/customers");
+      setState({ loading: false, error: "", customers });
+    } catch (error) {
+      setState({ loading: false, error: error.message || "Unable to load customers.", customers: [] });
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function updateStatus(id, status) {
+    await adminRequest(`/admin/customers/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+    await load();
+  }
+
+  const activeCustomers = useMemo(
+    () => state.customers.filter((customer) => customer.status === "ACTIVE").length,
+    [state.customers],
+  );
+
+  if (state.loading) return <div className="page-stack"><section className="panel-card"><p>Loading customers...</p></section></div>;
+  if (state.error) return <div className="page-stack"><section className="panel-card"><p className="auth-error">{state.error}</p></section></div>;
 
   return (
     <div className="page-stack">
-      <section className="content-grid">
-        <div className="primary-column">
-          <DashboardSection title="Customer and account management" subtitle="Search, review, and moderate customer states across the OptiZenqor ecosystem.">
-            <CustomerFilters filters={controller.filters} setFilters={controller.setFilters} />
-            <DataTable
-              columns={["User", "Role", "Plan", "Orders", "Favorites", "Status", "Actions"]}
-              rows={controller.users.map((user) => (
-                <tr key={user.id} onClick={() => controller.setActiveCustomerId(user.id)}>
-                  <td>
-                    <div className="identity-cell">
-                      <strong>{user.name}</strong>
-                      <span>{user.email}</span>
-                    </div>
-                  </td>
-                  <td>{user.role}</td>
-                  <td>{user.plan}</td>
-                  <td>{user.orders}</td>
-                  <td>{user.favorites}</td>
-                  <td>
-                    <StatusBadge value={user.status} toneMap={dashboard.state.system.toneMap} />
-                  </td>
-                  <td>
-                    <div className="action-row">
-                      <button type="button" className="table-action" onClick={() => controller.updateCustomerStatus(user.id, "Active")}>
-                        Activate
-                      </button>
-                      <button type="button" className="table-action danger" onClick={() => controller.updateCustomerStatus(user.id, "Suspended")}>
-                        Suspend
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            />
-          </DashboardSection>
-        </div>
-
-        <div className="secondary-column">
-          <SideDetailPanel title="Customer detail" subtitle="Quick context for the currently selected account.">
-            {controller.activeCustomer ? (
-              <div className="feature-list">
-                <article className="feature-card">
-                  <h3>{controller.activeCustomer.name}</h3>
-                  <p>{controller.activeCustomer.email}</p>
-                  <p>{controller.activeCustomer.role} • {controller.activeCustomer.plan}</p>
-                </article>
-                <article className="feature-card">
-                  <h3>Action history</h3>
-                  <div className="activity-list">
-                    {controller.activeCustomer.history.map((item) => (
-                      <article key={item.id} className="activity-item">
-                        <span className="activity-dot" />
-                        <p>{item.action} • {item.time}</p>
-                      </article>
-                    ))}
-                  </div>
-                </article>
-              </div>
-            ) : null}
-          </SideDetailPanel>
-
-          <DashboardSection title="Account actions" subtitle="Actions mirrored from the customer-facing account experience.">
-            <div className="feature-list">
-              {controller.accountActions.map((action) => (
-                <article key={action.title} className="feature-card">
-                  <h3>{action.title}</h3>
-                  <p>{action.subtitle}</p>
-                </article>
-              ))}
-            </div>
-          </DashboardSection>
-        </div>
-      </section>
-
       <section className="card-grid">
-        <InsightCard eyebrow="Customers" title="Active accounts" value={dashboard.state.customers.users.filter((user) => user.status === "Active").length} description="Healthy customer accounts currently able to transact." />
-        <InsightCard eyebrow="Customers" title="Under review" value={dashboard.state.customers.users.filter((user) => user.status === "Review").length} description="Accounts that still need admin attention." />
-        <InsightCard eyebrow="Customers" title="Favorites" value={dashboard.state.customers.users.reduce((sum, user) => sum + user.favorites, 0)} description="Favorites across the customer base for quick engagement context." />
+        <InsightCard eyebrow="Customers" title="Total customers" value={state.customers.length} description="Customer accounts loaded from the live backend." />
+        <InsightCard eyebrow="Customers" title="Active accounts" value={activeCustomers} description="Accounts currently able to log in and transact." />
+        <InsightCard eyebrow="Customers" title="Pending review" value={state.customers.filter((customer) => customer.status === "PENDING").length} description="Accounts waiting for admin action or follow-up." />
       </section>
+
+      <DashboardSection title="Customer and account management" subtitle="Review and moderate live customer states across the OptiZenqor ecosystem.">
+        <DataTable
+          columns={["User", "Email", "Phone", "Orders", "Status", "Actions"]}
+          rows={state.customers.map((customer) => (
+            <tr key={customer.id}>
+              <td>{customer.fullName}</td>
+              <td>{customer.email}</td>
+              <td>{customer.phone || "Not provided"}</td>
+              <td>{customer.orders.length}</td>
+              <td>{customer.status}</td>
+              <td>
+                <div className="action-row">
+                  <button type="button" className="table-action" onClick={() => updateStatus(customer.id, "ACTIVE")}>Activate</button>
+                  <button type="button" className="table-action danger" onClick={() => updateStatus(customer.id, "SUSPENDED")}>Suspend</button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        />
+      </DashboardSection>
     </div>
   );
 }

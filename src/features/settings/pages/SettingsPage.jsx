@@ -1,89 +1,62 @@
+import { useEffect, useState } from "react";
 import DashboardSection from "../../../shared/ui/DashboardSection";
-import FormFieldError from "../../../shared/feedback/FormFieldError";
-import { useSettingsController } from "../controller/settingsController";
+import { adminRequest } from "../../../shared/api/adminApi";
 
 function SettingsPage() {
-  const controller = useSettingsController();
+  const [state, setState] = useState({ loading: true, error: "", user: null, config: [], status: "" });
+
+  async function load() {
+    try {
+      const [user, config] = await Promise.all([
+        adminRequest("/auth/me"),
+        adminRequest("/system/config"),
+      ]);
+      setState((current) => ({ ...current, loading: false, error: "", user, config }));
+    } catch (error) {
+      setState((current) => ({ ...current, loading: false, error: error.message || "Unable to load settings." }));
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function saveConfig(key, value) {
+    await adminRequest(`/system/config/${key}`, {
+      method: "PATCH",
+      body: JSON.stringify({ value, description: "Managed from dashboard settings" }),
+    });
+    await load();
+    setState((current) => ({ ...current, status: `${key} updated.` }));
+  }
+
+  if (state.loading) return <div className="page-stack"><section className="panel-card"><p>Loading settings...</p></section></div>;
+  if (state.error) return <div className="page-stack"><section className="panel-card"><p className="auth-error">{state.error}</p></section></div>;
 
   return (
     <div className="page-stack">
-      <DashboardSection title="Admin settings" subtitle="Profile, preferences, notifications, and API configuration.">
-        <form className="form-card" onSubmit={controller.handleSubmit}>
-          <div className="split-fields">
-            <label>
-              Admin name
-              <input value={controller.form.adminName} onChange={(event) => controller.setForm((current) => ({ ...current, adminName: event.target.value }))} />
-              <FormFieldError message={controller.errors.adminName} />
-            </label>
-            <label>
-              Admin email
-              <input value={controller.form.adminEmail} onChange={(event) => controller.setForm((current) => ({ ...current, adminEmail: event.target.value }))} />
-              <FormFieldError message={controller.errors.adminEmail} />
-            </label>
-          </div>
+      <DashboardSection title="Admin settings" subtitle="Admin identity plus live system configuration values.">
+        <div className="feature-list">
+          <article className="feature-card">
+            <h3>{state.user.fullName}</h3>
+            <p>{state.user.email}</p>
+            <p>{state.user.role}</p>
+          </article>
+        </div>
 
-          <div className="split-fields">
-            <label>
-              Role title
-              <input value={controller.form.title} onChange={(event) => controller.setForm((current) => ({ ...current, title: event.target.value }))} />
-            </label>
-            <label>
-              API base URL
-              <input value={controller.form.apiBaseUrl} onChange={(event) => controller.setForm((current) => ({ ...current, apiBaseUrl: event.target.value }))} />
-              <FormFieldError message={controller.errors.apiBaseUrl} />
-            </label>
-          </div>
+        {state.status ? <p className="status-inline">{state.status}</p> : null}
 
-          <div className="split-fields">
-            <label>
-              Theme
-              <select value={controller.form.theme} onChange={(event) => controller.setForm((current) => ({ ...current, theme: event.target.value }))}>
-                <option>Warm light</option>
-                <option>Classic admin</option>
-              </select>
-            </label>
-            <label>
-              Density
-              <select value={controller.form.density} onChange={(event) => controller.setForm((current) => ({ ...current, density: event.target.value }))}>
-                <option>Comfortable</option>
-                <option>Compact</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="pill-grid">
-            <label className="toggle-chip">
-              <input
-                type="checkbox"
-                checked={controller.form.notifyOrders}
-                onChange={(event) => controller.setForm((current) => ({ ...current, notifyOrders: event.target.checked }))}
-              />
-              Order notifications
-            </label>
-            <label className="toggle-chip">
-              <input
-                type="checkbox"
-                checked={controller.form.notifySupport}
-                onChange={(event) => controller.setForm((current) => ({ ...current, notifySupport: event.target.checked }))}
-              />
-              Support notifications
-            </label>
-            <label className="toggle-chip">
-              <input
-                type="checkbox"
-                checked={controller.form.notifyContent}
-                onChange={(event) => controller.setForm((current) => ({ ...current, notifyContent: event.target.checked }))}
-              />
-              Content notifications
-            </label>
-          </div>
-
-          {controller.savedMessage ? <p className="status-inline">{controller.savedMessage}</p> : null}
-
-          <button type="submit" className="primary-button">
-            Save settings
-          </button>
-        </form>
+        <div className="feature-list">
+          {state.config.map((item) => (
+            <article key={item.id} className="feature-card">
+              <label>
+                {item.key}
+                <input defaultValue={item.value} onBlur={(event) => saveConfig(item.key, event.target.value)} />
+              </label>
+              <p>{item.description || "Managed from dashboard settings"}</p>
+            </article>
+          ))}
+        </div>
       </DashboardSection>
     </div>
   );

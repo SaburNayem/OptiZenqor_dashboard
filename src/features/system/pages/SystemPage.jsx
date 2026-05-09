@@ -1,77 +1,61 @@
+import { useEffect, useState } from "react";
 import DashboardSection from "../../../shared/ui/DashboardSection";
 import DataTable from "../../../shared/ui/DataTable";
-import StatusBadge from "../../../shared/ui/StatusBadge";
-import { useSystemController } from "../controller/systemController";
+import { adminRequest } from "../../../shared/api/adminApi";
 
 function SystemPage() {
-  const controller = useSystemController();
+  const [state, setState] = useState({ loading: true, error: "", health: null, config: [] });
+
+  async function load() {
+    try {
+      const [health, config] = await Promise.all([
+        adminRequest("/system/health"),
+        adminRequest("/system/config"),
+      ]);
+      setState({ loading: false, error: "", health, config });
+    } catch (error) {
+      setState({ loading: false, error: error.message || "Unable to load system status.", health: null, config: [] });
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  if (state.loading) return <div className="page-stack"><section className="panel-card"><p>Loading system health...</p></section></div>;
+  if (state.error) return <div className="page-stack"><section className="panel-card"><p className="auth-error">{state.error}</p></section></div>;
 
   return (
     <div className="page-stack">
       <section className="card-grid">
-        {controller.system.healthCards.map((card) => (
-          <article key={card.label} className="insight-card">
-            <p className="eyebrow">Health</p>
-            <h3>{card.label}</h3>
-            <strong>{card.value}</strong>
-            <p>{card.detail}</p>
-          </article>
-        ))}
+        <article className="insight-card">
+          <p className="eyebrow">Health</p>
+          <h3>Service status</h3>
+          <strong>{state.health.status}</strong>
+          <p>{state.health.service}</p>
+        </article>
+        <article className="insight-card">
+          <p className="eyebrow">Health</p>
+          <h3>Uptime</h3>
+          <strong>{Math.round(state.health.uptime)}s</strong>
+          <p>Current backend runtime.</p>
+        </article>
+        <article className="insight-card">
+          <p className="eyebrow">Config</p>
+          <h3>Tracked keys</h3>
+          <strong>{state.config.length}</strong>
+          <p>System configuration values managed in the database.</p>
+        </article>
       </section>
 
-      <section className="content-grid">
-        <div className="primary-column">
-          <DashboardSection
-            title="API endpoint coverage"
-            subtitle="Mock API-ready endpoint monitoring for app, storefront, and admin platform services."
-            action={
-              <button type="button" className="primary-button" onClick={controller.refreshSystem}>
-                Refresh check
-              </button>
-            }
-          >
-            <DataTable
-              columns={["Endpoint", "Purpose", "Latency", "Status"]}
-              rows={controller.system.apiConfig.endpoints.map((endpoint) => (
-                <tr key={endpoint.path}>
-                  <td>{endpoint.path}</td>
-                  <td>{endpoint.purpose}</td>
-                  <td>{endpoint.latency}</td>
-                  <td>
-                    <StatusBadge value={endpoint.status} toneMap={controller.system.toneMap} />
-                  </td>
-                </tr>
-              ))}
-            />
-          </DashboardSection>
-        </div>
-
-        <div className="secondary-column">
-          <DashboardSection title="Environment and config" subtitle="Technical settings extracted from the current service layer.">
-            <div className="feature-list">
-              <article className="feature-card">
-                <h3>Base URL</h3>
-                <p>{controller.system.apiConfig.baseUrl}</p>
-              </article>
-              <article className="feature-card">
-                <h3>Environment</h3>
-                <p>Mock production mirror</p>
-              </article>
-            </div>
-          </DashboardSection>
-        </div>
-      </section>
-
-      <DashboardSection title="Authentication service flow" subtitle="Current mock auth behavior and route availability.">
+      <DashboardSection title="System configuration" subtitle="Live configuration values coming from the backend.">
         <DataTable
-          columns={["Flow", "Behavior", "Status"]}
-          rows={controller.system.authFlows.map((flow) => (
-            <tr key={flow.key}>
-              <td>{flow.key}</td>
-              <td>{flow.detail}</td>
-              <td>
-                <StatusBadge value={flow.status} toneMap={controller.system.toneMap} />
-              </td>
+          columns={["Key", "Value", "Description"]}
+          rows={state.config.map((item) => (
+            <tr key={item.id}>
+              <td>{item.key}</td>
+              <td>{item.value}</td>
+              <td>{item.description || "System-managed config value"}</td>
             </tr>
           ))}
         />

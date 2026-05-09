@@ -1,88 +1,68 @@
+import { useEffect, useState } from "react";
 import DashboardSection from "../../../shared/ui/DashboardSection";
-import FormFieldError from "../../../shared/feedback/FormFieldError";
-import { useHomepageController } from "../controller/homepageController";
+import { adminRequest } from "../../../shared/api/adminApi";
 
 function HomepagePage() {
-  const controller = useHomepageController();
+  const [state, setState] = useState({ loading: true, error: "", sections: [], status: "" });
+
+  async function load() {
+    try {
+      const sections = await adminRequest("/homepage/admin");
+      setState((current) => ({ ...current, loading: false, error: "", sections }));
+    } catch (error) {
+      setState((current) => ({ ...current, loading: false, error: error.message || "Unable to load homepage sections." }));
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function updateSection(section, updates) {
+    setState((current) => ({ ...current, status: "Saving changes..." }));
+    await adminRequest(`/homepage/${section.key}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
+    await load();
+    setState((current) => ({ ...current, status: `Updated "${section.title}".` }));
+  }
+
+  if (state.loading) return <div className="page-stack"><section className="panel-card"><p>Loading homepage...</p></section></div>;
+  if (state.error) return <div className="page-stack"><section className="panel-card"><p className="auth-error">{state.error}</p></section></div>;
 
   return (
     <div className="page-stack">
-      <section className="content-grid">
-        <div className="primary-column">
-          <DashboardSection title="Homepage management" subtitle="Control hero messaging, collections, highlights, and offer ribbons for app and web surfaces.">
-            <form className="form-card" onSubmit={controller.handleSubmit}>
-              <label>
-                Hero title
-                <input value={controller.form.heroTitle} onChange={(event) => controller.setForm((current) => ({ ...current, heroTitle: event.target.value }))} />
-                <FormFieldError message={controller.errors.heroTitle} />
-              </label>
-              <label>
-                Hero subtitle
-                <textarea value={controller.form.heroSubtitle} onChange={(event) => controller.setForm((current) => ({ ...current, heroSubtitle: event.target.value }))} />
-                <FormFieldError message={controller.errors.heroSubtitle} />
-              </label>
-              <div className="split-fields">
-                <label>
-                  Primary CTA
-                  <input value={controller.form.primaryCtaLabel} onChange={(event) => controller.setForm((current) => ({ ...current, primaryCtaLabel: event.target.value }))} />
-                  <FormFieldError message={controller.errors.primaryCtaLabel} />
-                </label>
-                <label>
-                  Secondary CTA
-                  <input value={controller.form.secondaryCtaLabel} onChange={(event) => controller.setForm((current) => ({ ...current, secondaryCtaLabel: event.target.value }))} />
-                  <FormFieldError message={controller.errors.secondaryCtaLabel} />
-                </label>
-              </div>
-              <label>
-                Featured collection
-                <input value={controller.form.featuredCollection} onChange={(event) => controller.setForm((current) => ({ ...current, featuredCollection: event.target.value }))} />
-              </label>
-              <button type="submit" className="primary-button">
-                Save homepage controls
-              </button>
-            </form>
-          </DashboardSection>
-        </div>
-
-        <div className="secondary-column">
-          <DashboardSection title="Popular products" subtitle="Select products that should surface in homepage popularity modules.">
-            <div className="selector-grid">
-              {controller.products.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  className={`selector-pill ${controller.form.popularProductIds.includes(product.id) ? "active" : ""}`}
-                  onClick={() => controller.togglePopularProduct(product.id)}
-                >
-                  {product.name}
+      {state.status ? <section className="panel-card"><p className="status-inline">{state.status}</p></section> : null}
+      <DashboardSection title="Homepage management" subtitle="Control live homepage sections for app and web surfaces.">
+        <div className="feature-list">
+          {state.sections.map((section) => (
+            <article key={section.key} className="feature-card">
+              <div className="feature-topline">
+                <div>
+                  <h3>{section.title}</h3>
+                  <p>{section.key}</p>
+                </div>
+                <button type="button" className={`toggle-pill ${section.isActive ? "enabled" : ""}`} onClick={() => updateSection(section, { isActive: !section.isActive })}>
+                  {section.isActive ? "Visible" : "Hidden"}
                 </button>
-              ))}
-            </div>
-          </DashboardSection>
-
-          <DashboardSection title="Trust cards" subtitle="Edit the trust and assurance highlights shown on the homepage.">
-            <div className="feature-list">
-              {controller.form.trustHighlights.map((item, index) => (
-                <label key={`highlight-${index}`}>
-                  Highlight {index + 1}
-                  <input value={item} onChange={(event) => controller.handleHighlightChange(index, event.target.value)} />
-                </label>
-              ))}
-            </div>
-          </DashboardSection>
-
-          <DashboardSection title="Offer ribbons" subtitle="Manage the ribbons and short promo labels used on hero and featured blocks.">
-            <div className="feature-list">
-              {controller.form.offerRibbons.map((item, index) => (
-                <label key={`ribbon-${index}`}>
-                  Ribbon {index + 1}
-                  <input value={item} onChange={(event) => controller.handleRibbonChange(index, event.target.value)} />
-                </label>
-              ))}
-            </div>
-          </DashboardSection>
+              </div>
+              <textarea
+                rows="5"
+                defaultValue={JSON.stringify(section.contentJson || {}, null, 2)}
+                onBlur={(event) => {
+                  try {
+                    const contentJson = JSON.parse(event.target.value);
+                    updateSection(section, { contentJson });
+                  } catch {
+                    setState((current) => ({ ...current, status: `Invalid JSON for "${section.title}".` }));
+                  }
+                }}
+              />
+            </article>
+          ))}
         </div>
-      </section>
+      </DashboardSection>
     </div>
   );
 }

@@ -1,7 +1,5 @@
-import { DashboardProvider } from "../store/DashboardContext";
-
 function AppProviders({ children }) {
-  return <DashboardProvider>{children}</DashboardProvider>;
+  return children;
 }
 
 export default AppProviders;

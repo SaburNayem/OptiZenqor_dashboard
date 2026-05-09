@@ -1,12 +1,10 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { signOut } from "../../features/auth/auth";
-import { useDashboard } from "../../store/DashboardContext";
 import { navigationItems, pageMeta } from "../../shared/config/navigation";
 
 function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const dashboard = useDashboard();
   const currentMeta = pageMeta[location.pathname] ?? pageMeta["/"];
 
   function handleLogout() {
@@ -41,7 +39,7 @@ function DashboardLayout() {
 
         <div className="sidebar-card">
           <p className="eyebrow">Command center</p>
-          <h3>{dashboard.pendingActions} pending actions across the ecosystem</h3>
+          <h3>Live admin controls across the ecosystem</h3>
           <p>
             Catalog, orders, customers, homepage content, support, auth flows,
             and system visibility are organized into dedicated admin surfaces.
@@ -59,12 +57,12 @@ function DashboardLayout() {
 
           <div className="topbar-actions">
             <div className="mini-stat">
-              <span>Pending actions</span>
-              <strong>{dashboard.pendingActions}</strong>
+              <span>Mode</span>
+              <strong>Live API</strong>
             </div>
             <div className="mini-stat">
               <span>Live routes</span>
-              <strong>{dashboard.systemSnapshot.liveRoutes}</strong>
+              <strong>{navigationItems.length}</strong>
             </div>
             <button type="button" className="logout-button" onClick={handleLogout}>
               Logout
